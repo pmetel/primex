@@ -1,0 +1,93 @@
+<html>
+
+<body>
+  <div style="padding: 10px; position: fixed;">
+    <span> columns: </span><button onclick="inc(-1)">-</button><input id="inw" value="60" type="number" style="width: 80px" step="1" onchange="changeColumns()"><button onclick="inc(1)">+</button>
+    <span> step: </span> <input id="instep" value="30" type="number" style="width: 50px" onchange="changeStep()">
+    <span> rows: </span> <input id="inh" value="800" type="number" style="width: 80px" onchange="changeRows()">
+    <span> scale: </span> <input id="ins" value="4" type="number" style="width: 50px" onchange="changeScale()">
+  </div>
+  <canvas id="img" width="800" height="600"
+    style="padding-top: 50px; image-rendering: pixelated; image-rendering: crisp-edges;"></div>
+    <script>
+      var w = 60
+      var h = 800
+      var scale = 4
+      var step = 30
+      var N
+      var primes
+      var ctx
+      var imageData
+      var pixels
+      function load () {
+        N = w * h
+        primes = new Array(N + 1).fill(0)
+        const canvas = document.getElementById('img')
+        canvas.width = scale * w
+        canvas.height = scale * h
+        ctx = canvas.getContext("2d")
+        imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        pixels = imageData.data
+        sito()
+      }
+      function inc(val) {
+        if (w+step*val < 0) return 
+        w += step*val
+        document.getElementById('inw').value = w
+        load()
+      }
+      function changeStep () {
+        step = parseInt(document.getElementById('instep').value)
+      }
+      function changeColumns () {
+        w = parseInt(document.getElementById('inw').value)
+        load()
+      }
+      function changeRows () {
+        h = parseInt(document.getElementById('inh').value)
+        load()
+      }
+      function changeScale () {
+        scale = parseInt(document.getElementById('ins').value)
+        load()
+      }
+      function showPrime (p) {
+        updatePixel(pixels, p - 1, 0, 0, 0)
+        ctx.putImageData(imageData, 0, 0)
+      }
+      function showPrimes () {
+        for (let p = 2; p < N + 2; p++) {
+          if (primes[p] == 0) {
+            updatePixel(pixels, p - 1, 0, 0, 0)
+          }
+        }
+        ctx.putImageData(imageData, 0, 0)
+      }
+      function sito () {
+        for (let i = 2; i * i <= N; i++) {        // until i<=sqrt(n)
+          if (primes[i] == 0) {                   // it is prime numer
+            for (let j = i * i; j <= N; j += i) { // remove multiplicity of this prime number
+              primes[j] = 1
+            }
+          }
+        }
+        showPrimes()
+      }
+      function updatePixel (pixels, n, r, g, b) {
+        let lineStart = (n / w >> 0)
+        n += lineStart * w * (scale - 1)
+        for (let line = 0; line < scale; line++) {
+          let lineOffset = w * line
+          for (let s = 0; s < scale; s++) {
+            pixels[(scale * (n + lineOffset) + s) * 4 + 0] = r
+            pixels[(scale * (n + lineOffset) + s) * 4 + 1] = g
+            pixels[(scale * (n + lineOffset) + s) * 4 + 2] = b
+            pixels[(scale * (n + lineOffset) + s) * 4 + 3] = 255
+          }
+        }
+      }
+      load()
+    </script>
+</body>
+
+</html>
