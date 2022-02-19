@@ -5,9 +5,9 @@
 </head>
 
 <body style="margin: 0 10px">
-  <div style="float: right; padding: 10px;"><a class="github-button" href="https://github.com/pmetel/primex"
-      aria-label="View Primex"></a></div>
-  <div style="padding: 10px; position: fixed; z-index: 10; background-color: white;">
+  <div style="padding: 10px; position: fixed; z-index: 10; background-color: white; width: 100%">
+    <div style="float: right; margin-right: 50px;"><a class="github-button" href="https://github.com/pmetel/primex"
+        aria-label="View Primex"></a></div>
     <div style="display: flex;">
       <div>
         <span> columns: </span><button onclick="inc(-1)">-</button><input id="inw" value="60" type="number"
@@ -16,8 +16,8 @@
         <span> rows: </span> <input id="inh" value="800" type="number" style="width: 80px" onchange="changeRows()">
         <span> scale: </span> <input id="ins" value="4" type="number" style="width: 50px" onchange="changeScale()">
       </div>
-      <a id="download" download="primex.png" style="margin-left: 5px;">
-        <button type="dbt" onClick="download()">Download</button>
+      <a id="download" download="primex.png" style="margin-left: 5px; cursor: pointer;">
+        <button type="dbt" onClick="download()" style="cursor: pointer;">Download</button>
       </a>
       <div id="cord" style="margin-left: 10px;display:none;">
         <span id='x'></span> x <span id="y"></span> = <span id="val"></span> <span id="prime"
@@ -28,7 +28,7 @@
   </div>
   <div style="padding-top: 50px;">
     <canvas id="img" width="800" height="600"
-      style="image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid red;" />
+      style="image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid red; cursor: crosshair;" />
   </div>
   <script>
     var w = 60
@@ -120,7 +120,6 @@
       var x = parseInt(event.layerX / scale) + 1;
       var y = parseInt(event.layerY / scale) + 1;
       var n = (y - 1) * w + x
-      console.log(x, y, parseInt(n))
       di('cord').style.display = 'inline'
       di('x').innerText = x
       di('y').innerText = y
