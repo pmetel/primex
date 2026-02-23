@@ -350,7 +350,7 @@
 
     function updateScaleStyles() {
         elements.canvas.style.width = `${state.width * state.scale}px`;
-        elements.canvas.style.height = `${state.height * state.scale}px`;
+        elements.canvas.style.height = 'auto';
     }
 
     function handleMouseMove(e) {
@@ -399,6 +399,10 @@
 
         // Disable smoothing for pixelated look
         tempCtx.imageSmoothingEnabled = false;
+
+        // Fill background with white (for composite numbers which are transparent)
+        tempCtx.fillStyle = '#ffffff';
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
         // Draw the current small canvas onto the large canvas
         // This leverages the browser's scaling, which honors imageSmoothingEnabled = false
