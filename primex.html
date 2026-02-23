@@ -46,8 +46,10 @@
       N = w * h
       primes = new Array(N + 1).fill(0)
       const canvas = di('img')
-      canvas.width = scale * w
-      canvas.height = scale * h
+      canvas.width = w
+      canvas.height = h
+      canvas.style.width = (w * scale) + 'px'
+      canvas.style.height = (h * scale) + 'px'
       ctx = canvas.getContext("2d")
       imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
       pixels = imageData.data
@@ -73,14 +75,16 @@
     }
     function changeScale () {
       scale = parseInt(di('ins').value)
-      load()
+      const canvas = di('img')
+      canvas.style.width = (w * scale) + 'px'
+      canvas.style.height = (h * scale) + 'px'
     }
     function showPrime (p) {
       updatePixel(pixels, p - 1, 0, 0, 0)
       ctx.putImageData(imageData, 0, 0)
     }
     function showPrimes () {
-      for (let p = 2; p < N + 2; p++) {
+      for (let p = 2; p <= N; p++) {
         if (primes[p] == 0) {
           updatePixel(pixels, p - 1, 0, 0, 0)
         }
@@ -100,25 +104,19 @@
       showPrimes()
     }
     function updatePixel (pixels, n, r, g, b) {
-      let lineStart = (n / w >> 0)
-      n += lineStart * w * (scale - 1)
-      for (let line = 0; line < scale; line++) {
-        let lineOffset = w * line
-        for (let s = 0; s < scale; s++) {
-          pixels[(scale * (n + lineOffset) + s) * 4 + 0] = r
-          pixels[(scale * (n + lineOffset) + s) * 4 + 1] = g
-          pixels[(scale * (n + lineOffset) + s) * 4 + 2] = b
-          pixels[(scale * (n + lineOffset) + s) * 4 + 3] = 255
-        }
-      }
+      let i = n * 4
+      pixels[i + 0] = r
+      pixels[i + 1] = g
+      pixels[i + 2] = b
+      pixels[i + 3] = 255
     }
     function onhover (e) {
       if (loading) {
         di('cord').style.display = 'none'
         return
       }
-      var x = parseInt(event.layerX / scale) + 1;
-      var y = parseInt(event.layerY / scale) + 1;
+      var x = parseInt(e.offsetX / scale) + 1;
+      var y = parseInt(e.offsetY / scale) + 1;
       var n = (y - 1) * w + x
       di('cord').style.display = 'inline'
       di('x').innerText = x
