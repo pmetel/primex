@@ -1,142 +1,425 @@
-<html>
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Primex - Prime Number Visualization</title>
+  <style>
+    :root {
+      --primary-color: #2c3e50;
+      --secondary-color: #e74c3c;
+      --accent-color: #3498db;
+      --bg-color: #ecf0f1;
+      --text-color: #333;
+      --panel-bg: #fff;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      background-color: var(--panel-bg);
+      padding: 15px 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      z-index: 100;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      flex-grow: 1;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-right: 5px;
+    }
+
+    input[type="number"] {
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 60px;
+      font-size: 0.9rem;
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #34495e;
+    }
+
+    button.icon-btn {
+        padding: 5px 10px;
+        min-width: 30px;
+    }
+
+    button.download-btn {
+      background-color: var(--accent-color);
+    }
+
+    button.download-btn:hover {
+      background-color: #2980b9;
+    }
+
+    .github-link {
+      margin-left: auto;
+    }
+
+    main {
+      flex-grow: 1;
+      overflow: auto;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      position: relative;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 1px solid var(--secondary-color);
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      background-color: white;
+      cursor: crosshair;
+      max-width: 100%; /* Responsive width */
+      height: auto;    /* Maintain aspect ratio */
+    }
+
+    #tooltip {
+      position: fixed;
+      background-color: rgba(44, 62, 80, 0.9);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      pointer-events: none;
+      display: none;
+      z-index: 1000;
+      white-space: nowrap;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    #tooltip .prime-status {
+        font-weight: bold;
+        color: #2ecc71; /* Green for prime */
+        margin-left: 8px;
+    }
+
+    #tooltip .composite-status {
+        color: #e74c3c; /* Red for composite */
+        margin-left: 8px;
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .controls {
+        justify-content: space-between;
+      }
+      .github-link {
+        order: -1;
+        margin-left: 0;
+        text-align: right;
+      }
+    }
+  </style>
   <script async defer src="https://buttons.github.io/buttons.js"></script>
 </head>
+<body>
 
-<body style="margin: 0 10px">
-  <div style="padding: 10px; position: fixed; z-index: 10; background-color: white; width: 100%">
-    <div style="float: right; margin-right: 50px;"><a class="github-button" href="https://github.com/pmetel/primex"
-        aria-label="View Primex"></a></div>
-    <div style="display: flex;">
-      <div>
-        <span> columns: </span><button onclick="inc(-1)">-</button><input id="inw" value="60" type="number"
-          style="width: 80px" step="1" onchange="changeColumns()"><button onclick="inc(1)">+</button>
-        <span> step: </span> <input id="instep" value="30" type="number" style="width: 50px" onchange="changeStep()">
-        <span> rows: </span> <input id="inh" value="800" type="number" style="width: 80px" onchange="changeRows()">
-        <span> scale: </span> <input id="ins" value="4" type="number" style="width: 50px" onchange="changeScale()">
+  <header>
+    <div class="controls">
+      <div class="control-group">
+        <label for="inw">Columns:</label>
+        <button class="icon-btn" onclick="updateColumns(-1)">-</button>
+        <input id="inw" type="number" value="60" step="1" onchange="renderVisualization()">
+        <button class="icon-btn" onclick="updateColumns(1)">+</button>
       </div>
-      <a id="download" download="primex.png" style="margin-left: 5px; cursor: pointer;">
-        <button type="dbt" onClick="download()" style="cursor: pointer;">Download</button>
-      </a>
-      <div id="cord" style="margin-left: 10px;display:none;">
-        <span id='x'></span> x <span id="y"></span> = <span id="val"></span> <span id="prime"
-          style="margin-left: 5px;display:none;">&check;prime</span>
+
+      <div class="control-group">
+        <label for="instep">Step:</label>
+        <input id="instep" type="number" value="30" onchange="updateStep()">
       </div>
+
+      <div class="control-group">
+        <label for="inh">Rows:</label>
+        <input id="inh" type="number" value="800" onchange="renderVisualization()">
+      </div>
+
+      <div class="control-group">
+        <label for="ins">Scale:</label>
+        <input id="ins" type="number" value="4" onchange="updateScale()">
+      </div>
+
+      <button class="download-btn" onclick="downloadImage()">Download HD</button>
     </div>
 
-  </div>
-  <div style="padding-top: 50px;">
-    <canvas id="img" width="800" height="600"
-      style="image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid red; cursor: crosshair;" />
-  </div>
-  <script>
-    var w = 60
-    var h = 800
-    var scale = 4
-    var step = 30
-    var N
-    var primes
-    var ctx
-    var imageData
-    var pixels
-    var loading = false
-    function load () {
-      loading = true
-      N = w * h
-      primes = new Array(N + 1).fill(0)
-      const canvas = di('img')
-      canvas.width = w
-      canvas.height = h
-      canvas.style.width = (w * scale) + 'px'
-      canvas.style.height = (h * scale) + 'px'
-      ctx = canvas.getContext("2d")
-      imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-      pixels = imageData.data
-      sito()
-      loading = false
-    }
-    function inc (val) {
-      if (w + step * val < 0) return
-      w += step * val
-      di('inw').value = w
-      load()
-    }
-    function changeStep () {
-      step = parseInt(di('instep').value)
-    }
-    function changeColumns () {
-      w = parseInt(di('inw').value)
-      load()
-    }
-    function changeRows () {
-      h = parseInt(di('inh').value)
-      load()
-    }
-    function changeScale () {
-      scale = parseInt(di('ins').value)
-      const canvas = di('img')
-      canvas.style.width = (w * scale) + 'px'
-      canvas.style.height = (h * scale) + 'px'
-    }
-    function showPrime (p) {
-      updatePixel(pixels, p - 1, 0, 0, 0)
-      ctx.putImageData(imageData, 0, 0)
-    }
-    function showPrimes () {
-      for (let p = 2; p <= N; p++) {
-        if (primes[p] == 0) {
-          updatePixel(pixels, p - 1, 0, 0, 0)
-        }
-      }
-      ctx.putImageData(imageData, 0, 0)
-    }
-    function sito () {
+    <div class="github-link">
+      <a class="github-button" href="https://github.com/pmetel/primex" aria-label="View Primex on GitHub">View on GitHub</a>
+    </div>
+  </header>
 
-      for (let i = 2; i * i <= N; i++) {        // until i<=sqrt(n)
-        if (primes[i] == 0) {                   // it is prime numer
-          for (let j = i * i; j <= N; j += i) { // remove multiplicity of this prime number
-            primes[j] = 1
+  <main>
+    <canvas id="primexCanvas"></canvas>
+  </main>
+
+  <div id="tooltip">
+    <span id="tooltip-coords"></span>
+    <span id="tooltip-val"></span>
+    <span id="tooltip-status"></span>
+  </div>
+
+  <script>
+    // --- State ---
+    const state = {
+      width: 60,
+      height: 800,
+      scale: 4,
+      step: 30,
+      primes: [],
+      pixelBuffer: null,
+      loading: false
+    };
+
+    // --- DOM Elements ---
+    const elements = {
+      canvas: document.getElementById('primexCanvas'),
+      inputWidth: document.getElementById('inw'),
+      inputHeight: document.getElementById('inh'),
+      inputScale: document.getElementById('ins'),
+      inputStep: document.getElementById('instep'),
+      tooltip: document.getElementById('tooltip'),
+      tooltipCoords: document.getElementById('tooltip-coords'),
+      tooltipVal: document.getElementById('tooltip-val'),
+      tooltipStatus: document.getElementById('tooltip-status'),
+    };
+
+    let ctx = elements.canvas.getContext('2d', { alpha: false }); // Optimize for opaque canvas
+    let imageData;
+
+    // --- Initialization ---
+    function init() {
+      // Load initial values from inputs
+      state.width = parseInt(elements.inputWidth.value) || 60;
+      state.height = parseInt(elements.inputHeight.value) || 800;
+      state.scale = parseInt(elements.inputScale.value) || 4;
+      state.step = parseInt(elements.inputStep.value) || 30;
+
+      renderVisualization();
+
+      // Event Listeners
+      elements.canvas.addEventListener('mousemove', handleMouseMove);
+      elements.canvas.addEventListener('mouseleave', () => {
+        elements.tooltip.style.display = 'none';
+      });
+
+      // Responsive Resize
+       window.addEventListener('resize', () => {
+           // Optional: Adjust layout if needed, though CSS handles most of it.
+       });
+    }
+
+    // --- Core Logic ---
+    function renderVisualization() {
+      if (state.loading) return;
+      state.loading = true;
+
+      // Update state from inputs
+      state.width = parseInt(elements.inputWidth.value);
+      state.height = parseInt(elements.inputHeight.value);
+
+      const totalPixels = state.width * state.height;
+      state.primes = new Uint8Array(totalPixels + 1); // 0 = Prime, 1 = Composite
+
+      // Resize Canvas (Internal Resolution)
+      elements.canvas.width = state.width;
+      elements.canvas.height = state.height;
+
+      // Update Visual Scale
+      updateScaleStyles();
+
+      // Get Image Data
+      imageData = ctx.getImageData(0, 0, state.width, state.height);
+      state.pixelBuffer = imageData.data; // Helper reference
+
+      // Calculate Primes (Sieve)
+      calculatePrimes(totalPixels);
+
+      state.loading = false;
+    }
+
+    function calculatePrimes(n) {
+      // Sieve of Eratosthenes
+      // Initialize array (0 is implicitly prime initially)
+      // primes[0] and primes[1] are not prime
+      state.primes[0] = 1;
+      state.primes[1] = 1;
+
+      for (let i = 2; i * i <= n; i++) {
+        if (state.primes[i] === 0) {
+          for (let j = i * i; j <= n; j += i) {
+            state.primes[j] = 1; // Mark as composite
           }
         }
       }
-      primes[1] = 1
-      showPrimes()
+
+      drawPrimes(n);
     }
-    function updatePixel (pixels, n, r, g, b) {
-      let i = n * 4
-      pixels[i + 0] = r
-      pixels[i + 1] = g
-      pixels[i + 2] = b
-      pixels[i + 3] = 255
-    }
-    function onhover (e) {
-      if (loading) {
-        di('cord').style.display = 'none'
-        return
+
+    function drawPrimes(n) {
+      // Iterate through all numbers and color pixels
+      // Start from 1 because pixel index 0 corresponds to number 1
+      for (let p = 1; p <= n; p++) {
+        const isPrime = state.primes[p] === 0;
+        setPixel(p - 1, isPrime ? 0 : 255); // Black for prime, White for composite (or transparent)
       }
-      var x = parseInt(e.offsetX / scale) + 1;
-      var y = parseInt(e.offsetY / scale) + 1;
-      var n = (y - 1) * w + x
-      di('cord').style.display = 'inline'
-      di('x').innerText = x
-      di('y').innerText = y
-      di('val').innerText = n
-      di('prime').style.display = primes[n] == 0 ? 'inline' : 'none'
+      ctx.putImageData(imageData, 0, 0);
     }
-    function di (id) {
-      return document.getElementById(id)
+
+    function setPixel(index, value) {
+        // Optimized direct pixel access
+        const offset = index * 4;
+        // If prime (value 0), make it black. If composite (value 255), make it white/transparent.
+        // The original code made primes black (0,0,0,255).
+        // Let's stick to that: Black primes, White background.
+
+        if (value === 0) { // Prime
+            state.pixelBuffer[offset] = 0;     // R
+            state.pixelBuffer[offset + 1] = 0; // G
+            state.pixelBuffer[offset + 2] = 0; // B
+            state.pixelBuffer[offset + 3] = 255; // A
+        } else { // Composite
+            state.pixelBuffer[offset] = 255;
+            state.pixelBuffer[offset + 1] = 255;
+            state.pixelBuffer[offset + 2] = 255;
+            state.pixelBuffer[offset + 3] = 0; // Transparent? Or White? Let's do Transparent to show background
+        }
     }
-    function download () {
-      const img = di('img').toDataURL("image/png").replace("image/png", "image/octet-stream")
-      const dl = di('download')
-      dl.setAttribute('href', img)
-      dl.setAttribute('download',`primex_${w}x${h}.png`)
+
+    // --- Interaction ---
+    function updateColumns(delta) {
+        let newWidth = state.width + (state.step * delta);
+        if (newWidth < 1) newWidth = 1;
+        elements.inputWidth.value = newWidth;
+        renderVisualization();
     }
-    load()
-    di('img').addEventListener('mousemove', onhover)
-    di('img').addEventListener('mouseout', () => { di('cord').style.display = 'none' }, false)
+
+    function updateStep() {
+        state.step = parseInt(elements.inputStep.value) || 1;
+    }
+
+    function updateScale() {
+        state.scale = parseInt(elements.inputScale.value) || 1;
+        updateScaleStyles();
+    }
+
+    function updateScaleStyles() {
+        elements.canvas.style.width = `${state.width * state.scale}px`;
+        elements.canvas.style.height = 'auto';
+    }
+
+    function handleMouseMove(e) {
+      if (state.loading) return;
+
+      // Use clientWidth/Height to get the actual rendered size (padding box)
+      // This handles CSS resizing (max-width: 100%) correctly.
+      const displayWidth = elements.canvas.clientWidth;
+      const displayHeight = elements.canvas.clientHeight;
+
+      // Map mouse position (relative to padding box) to internal canvas coordinates
+      let x = Math.floor((e.offsetX / displayWidth) * state.width);
+      let y = Math.floor((e.offsetY / displayHeight) * state.height);
+
+      // Clamp to bounds
+      if (x < 0) x = 0;
+      if (y < 0) y = 0;
+      if (x >= state.width) x = state.width - 1;
+      if (y >= state.height) y = state.height - 1;
+
+      const n = (y * state.width) + x + 1; // 1-based index
+      const isPrime = state.primes[n] === 0;
+
+      // Update Tooltip
+      elements.tooltip.style.display = 'block';
+      elements.tooltip.style.left = `${e.clientX + 15}px`;
+      elements.tooltip.style.top = `${e.clientY + 15}px`;
+
+      elements.tooltipCoords.textContent = `${x + 1} x ${y + 1} = `;
+      elements.tooltipVal.textContent = n;
+
+      if (isPrime) {
+          elements.tooltipStatus.innerHTML = '<span class="prime-status">✓ Prime</span>';
+      } else {
+          elements.tooltipStatus.innerHTML = '<span class="composite-status">Composite</span>';
+      }
+    }
+
+    // --- Export ---
+    function downloadImage() {
+        // Create a temporary canvas to draw the scaled version
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = state.width * state.scale;
+        tempCanvas.height = state.height * state.scale;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        // Disable smoothing for pixelated look
+        tempCtx.imageSmoothingEnabled = false;
+
+        // Fill background with white (for composite numbers which are transparent)
+        tempCtx.fillStyle = '#ffffff';
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+        // Draw the current small canvas onto the large canvas
+        // This leverages the browser's scaling, which honors imageSmoothingEnabled = false
+        tempCtx.drawImage(elements.canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+
+        // Trigger Download
+        const link = document.createElement('a');
+        link.download = `primex_${state.width}x${state.height}_scale${state.scale}.png`;
+        link.href = tempCanvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Start
+    init();
+
   </script>
 </body>
-
 </html>
