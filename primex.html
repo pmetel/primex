@@ -274,7 +274,7 @@
       updateScaleStyles();
 
       // Get Image Data
-      imageData = ctx.getImageData(0, 0, state.width, state.height);
+      imageData = ctx.createImageData(state.width, state.height);
       state.pixelBuffer = imageData.data; // Helper reference
 
       // Calculate Primes (Sieve)
