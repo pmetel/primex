@@ -213,7 +213,9 @@
       step: 30,
       primes: [],
       pixelBuffer: null,
-      loading: false
+      loading: false,
+      displayWidth: 0,
+      displayHeight: 0
     };
 
     // --- DOM Elements ---
@@ -250,7 +252,7 @@
 
       // Responsive Resize
        window.addEventListener('resize', () => {
-           // Optional: Adjust layout if needed, though CSS handles most of it.
+           updateCachedDimensions();
        });
     }
 
@@ -351,15 +353,19 @@
     function updateScaleStyles() {
         elements.canvas.style.width = `${state.width * state.scale}px`;
         elements.canvas.style.height = 'auto';
+        updateCachedDimensions();
+    }
+
+    function updateCachedDimensions() {
+        state.displayWidth = elements.canvas.clientWidth;
+        state.displayHeight = elements.canvas.clientHeight;
     }
 
     function handleMouseMove(e) {
       if (state.loading) return;
 
-      // Use clientWidth/Height to get the actual rendered size (padding box)
-      // This handles CSS resizing (max-width: 100%) correctly.
-      const displayWidth = elements.canvas.clientWidth;
-      const displayHeight = elements.canvas.clientHeight;
+      // Use cached dimensions to avoid layout thrashing
+      const { displayWidth, displayHeight } = state;
 
       // Map mouse position (relative to padding box) to internal canvas coordinates
       let x = Math.floor((e.offsetX / displayWidth) * state.width);
