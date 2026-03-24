@@ -369,9 +369,17 @@
       elements.tooltipVal.textContent = n;
 
       if (isPrime) {
-          elements.tooltipStatus.innerHTML = '<span class="prime-status">✓ Prime</span>';
+          if (elements.tooltipStatus.textContent !== '✓ Prime') {
+              elements.tooltipStatus.textContent = '✓ Prime';
+              elements.tooltipStatus.classList.remove('composite-status');
+              elements.tooltipStatus.classList.add('prime-status');
+          }
       } else {
-          elements.tooltipStatus.innerHTML = '<span class="composite-status">Composite</span>';
+          if (elements.tooltipStatus.textContent !== 'Composite') {
+              elements.tooltipStatus.textContent = 'Composite';
+              elements.tooltipStatus.classList.remove('prime-status');
+              elements.tooltipStatus.classList.add('composite-status');
+          }
       }
     }
 
