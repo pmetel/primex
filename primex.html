@@ -213,6 +213,7 @@
       step: 30,
       primes: [],
       pixelBuffer: null,
+      uint32Buffer: null,
       loading: false
     };
 
@@ -272,6 +273,7 @@
       // Get Image Data
       imageData = ctx.createImageData(state.width, state.height);
       state.pixelBuffer = imageData.data; // Helper reference
+      state.uint32Buffer = new Uint32Array(imageData.data.buffer); // Fast 32-bit access
 
       // Calculate Primes (Sieve)
       calculatePrimes(totalPixels);
@@ -298,33 +300,21 @@
     }
 
     function drawPrimes(n) {
+      // Determine endianness for efficient 32-bit color writes
+      const isLittleEndian = new Uint32Array(new Uint8Array([0x01, 0x02, 0x03, 0x04]).buffer)[0] === 0x04030201;
+
+      // Color constants (RGBA)
+      // Prime: Black (0, 0, 0, 255)
+      // Composite: Transparent (255, 255, 255, 0)
+      const colorPrime = isLittleEndian ? 0xFF000000 : 0x000000FF;
+      const colorComposite = isLittleEndian ? 0x00FFFFFF : 0xFFFFFF00;
+
       // Iterate through all numbers and color pixels
       // Start from 1 because pixel index 0 corresponds to number 1
       for (let p = 1; p <= n; p++) {
-        const isPrime = state.primes[p] === 0;
-        setPixel(p - 1, isPrime ? 0 : 255); // Black for prime, White for composite (or transparent)
+        state.uint32Buffer[p - 1] = (state.primes[p] === 0) ? colorPrime : colorComposite;
       }
       ctx.putImageData(imageData, 0, 0);
-    }
-
-    function setPixel(index, value) {
-        // Optimized direct pixel access
-        const offset = index * 4;
-        // If prime (value 0), make it black. If composite (value 255), make it white/transparent.
-        // The original code made primes black (0,0,0,255).
-        // Let's stick to that: Black primes, White background.
-
-        if (value === 0) { // Prime
-            state.pixelBuffer[offset] = 0;     // R
-            state.pixelBuffer[offset + 1] = 0; // G
-            state.pixelBuffer[offset + 2] = 0; // B
-            state.pixelBuffer[offset + 3] = 255; // A
-        } else { // Composite
-            state.pixelBuffer[offset] = 255;
-            state.pixelBuffer[offset + 1] = 255;
-            state.pixelBuffer[offset + 2] = 255;
-            state.pixelBuffer[offset + 3] = 0; // Transparent? Or White? Let's do Transparent to show background
-        }
     }
 
     // --- Interaction ---
