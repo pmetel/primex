@@ -158,7 +158,7 @@
       }
     }
   </style>
-  <script async defer src="https://buttons.github.io/buttons.js"></script>
+  <script async defer src="https://buttons.github.io/buttons.js" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -167,23 +167,23 @@
       <div class="control-group">
         <label for="inw">Columns:</label>
         <button class="icon-btn" onclick="updateColumns(-1)">-</button>
-        <input id="inw" type="number" value="60" step="1" onchange="renderVisualization()">
+        <input id="inw" type="number" value="60" step="1" min="1" max="1600" onchange="renderVisualization()">
         <button class="icon-btn" onclick="updateColumns(1)">+</button>
       </div>
 
       <div class="control-group">
         <label for="instep">Step:</label>
-        <input id="instep" type="number" value="30" onchange="updateStep()">
+        <input id="instep" type="number" value="30" min="1" max="1000" onchange="updateStep()">
       </div>
 
       <div class="control-group">
         <label for="inh">Rows:</label>
-        <input id="inh" type="number" value="800" onchange="renderVisualization()">
+        <input id="inh" type="number" value="800" min="1" max="1600" onchange="renderVisualization()">
       </div>
 
       <div class="control-group">
         <label for="ins">Scale:</label>
-        <input id="ins" type="number" value="4" onchange="updateScale()">
+        <input id="ins" type="number" value="4" min="1" max="10" onchange="updateScale()">
       </div>
 
       <button class="download-btn" onclick="downloadImage()">Download HD</button>
@@ -205,6 +205,12 @@
   </div>
 
   <script>
+    // --- Constants ---
+    const MAX_W = 1600;
+    const MAX_H = 1600;
+    const MAX_SCALE = 10;
+    const MAX_STEP = 1000;
+
     // --- State ---
     const state = {
       width: 60,
@@ -213,8 +219,12 @@
       step: 30,
       primes: [],
       pixelBuffer: null,
-      loading: false
+      loading: false,
+      clientWidth: 0,
+      clientHeight: 0
     };
+
+    const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
 
     // --- DOM Elements ---
     const elements = {
@@ -235,10 +245,16 @@
     // --- Initialization ---
     function init() {
       // Load initial values from inputs
-      state.width = parseInt(elements.inputWidth.value) || 60;
-      state.height = parseInt(elements.inputHeight.value) || 800;
-      state.scale = parseInt(elements.inputScale.value) || 4;
-      state.step = parseInt(elements.inputStep.value) || 30;
+      state.width = clamp(elements.inputWidth.valueAsNumber || 60, 1, MAX_W);
+      state.height = clamp(elements.inputHeight.valueAsNumber || 800, 1, MAX_H);
+      state.scale = clamp(elements.inputScale.valueAsNumber || 4, 1, MAX_SCALE);
+      state.step = clamp(elements.inputStep.valueAsNumber || 30, 1, MAX_STEP);
+
+      // Update UI to match clamped values
+      elements.inputWidth.value = state.width;
+      elements.inputHeight.value = state.height;
+      elements.inputScale.value = state.scale;
+      elements.inputStep.value = state.step;
 
       renderVisualization();
 
@@ -250,7 +266,8 @@
 
       // Responsive Resize
        window.addEventListener('resize', () => {
-           // Optional: Adjust layout if needed, though CSS handles most of it.
+           state.clientWidth = elements.canvas.clientWidth;
+           state.clientHeight = elements.canvas.clientHeight;
        });
     }
 
@@ -260,8 +277,12 @@
       state.loading = true;
 
       // Update state from inputs
-      state.width = parseInt(elements.inputWidth.value);
-      state.height = parseInt(elements.inputHeight.value);
+      state.width = clamp(elements.inputWidth.valueAsNumber || 1, 1, MAX_W);
+      state.height = clamp(elements.inputHeight.valueAsNumber || 1, 1, MAX_H);
+
+      // Update UI
+      elements.inputWidth.value = state.width;
+      elements.inputHeight.value = state.height;
 
       const totalPixels = state.width * state.height;
       state.primes = new Uint8Array(totalPixels + 1); // 0 = Prime, 1 = Composite
@@ -269,6 +290,10 @@
       // Resize Canvas (Internal Resolution)
       elements.canvas.width = state.width;
       elements.canvas.height = state.height;
+
+      // Update state layout cache
+      state.clientWidth = elements.canvas.clientWidth;
+      state.clientHeight = elements.canvas.clientHeight;
 
       // Update Visual Scale
       updateScaleStyles();
@@ -333,33 +358,36 @@
 
     // --- Interaction ---
     function updateColumns(delta) {
-        let newWidth = state.width + (state.step * delta);
-        if (newWidth < 1) newWidth = 1;
-        elements.inputWidth.value = newWidth;
+        state.width = clamp(state.width + (state.step * delta), 1, MAX_W);
+        elements.inputWidth.value = state.width;
         renderVisualization();
     }
 
     function updateStep() {
-        state.step = parseInt(elements.inputStep.value) || 1;
+        state.step = clamp(elements.inputStep.valueAsNumber || 1, 1, MAX_STEP);
+        elements.inputStep.value = state.step;
     }
 
     function updateScale() {
-        state.scale = parseInt(elements.inputScale.value) || 1;
+        state.scale = clamp(elements.inputScale.valueAsNumber || 1, 1, MAX_SCALE);
+        elements.inputScale.value = state.scale;
         updateScaleStyles();
     }
 
     function updateScaleStyles() {
         elements.canvas.style.width = `${state.width * state.scale}px`;
         elements.canvas.style.height = 'auto';
+        // Force layout cache update
+        state.clientWidth = elements.canvas.clientWidth;
+        state.clientHeight = elements.canvas.clientHeight;
     }
 
     function handleMouseMove(e) {
-      if (state.loading) return;
+      if (state.loading || !state.clientWidth) return;
 
-      // Use clientWidth/Height to get the actual rendered size (padding box)
-      // This handles CSS resizing (max-width: 100%) correctly.
-      const displayWidth = elements.canvas.clientWidth;
-      const displayHeight = elements.canvas.clientHeight;
+      // Use cached dimensions to avoid layout thrashing
+      const displayWidth = state.clientWidth;
+      const displayHeight = state.clientHeight;
 
       // Map mouse position (relative to padding box) to internal canvas coordinates
       let x = Math.floor((e.offsetX / displayWidth) * state.width);
@@ -379,13 +407,20 @@
       elements.tooltip.style.left = `${e.clientX + 15}px`;
       elements.tooltip.style.top = `${e.clientY + 15}px`;
 
-      elements.tooltipCoords.textContent = `${x + 1} x ${y + 1} = `;
-      elements.tooltipVal.textContent = n;
+      const coordsText = `${x + 1} x ${y + 1} = `;
+      if (elements.tooltipCoords.textContent !== coordsText) {
+          elements.tooltipCoords.textContent = coordsText;
+      }
+      if (elements.tooltipVal.textContent !== String(n)) {
+          elements.tooltipVal.textContent = n;
+      }
 
-      if (isPrime) {
-          elements.tooltipStatus.innerHTML = '<span class="prime-status">✓ Prime</span>';
-      } else {
-          elements.tooltipStatus.innerHTML = '<span class="composite-status">Composite</span>';
+      const statusText = isPrime ? '✓ Prime' : 'Composite';
+      const statusClass = isPrime ? 'prime-status' : 'composite-status';
+
+      if (elements.tooltipStatus.textContent !== statusText) {
+          elements.tooltipStatus.textContent = statusText;
+          elements.tooltipStatus.className = statusClass;
       }
     }
 
